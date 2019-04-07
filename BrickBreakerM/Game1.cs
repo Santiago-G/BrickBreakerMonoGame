@@ -10,16 +10,17 @@ namespace BrickBreakerM
     /// </summary>
     public class Game1 : Game
     {
-        GraphicsDeviceManager graphics;
-        SpriteBatch spriteBatch;
-        Texture2D[] images = new Texture2D[3];
+        private GraphicsDeviceManager graphics;
+        private SpriteBatch spriteBatch;
+        private Texture2D[] images = new Texture2D[3];
+        private Paddle paddle;
+        private Ball ball;
+        private List<Bricks> bricks = new List<Bricks>();
+        private KeyboardState ks;
+        private KeyboardState lastKs;
 
-        Paddle paddle;
-        Ball ball;
-
-        List<Bricks> bricks = new List<Bricks>();
-
-        KeyboardState ks;
+        SpriteFont gameFont;
+        bool gameOver = false;
 
         //Color color = new Color(new Vector3(100f, 0f, 50f)); //Make a Color
         //Color color = Color.Lerp(Color.White, Color.HotPink, 0.5f); //Mixing 2 colors
@@ -47,6 +48,8 @@ namespace BrickBreakerM
             base.Initialize();
         }
 
+
+
         /// <summary>
         /// LoadContent will be called once per game and is the place to load
         /// all of your content.
@@ -61,6 +64,7 @@ namespace BrickBreakerM
             images[0] = Content.Load<Texture2D>("RedBrick");
             images[1] = Content.Load<Texture2D>("PongBall");
             images[2] = Content.Load<Texture2D>("PaddleBrickBreaker");
+            gameFont = Content.Load<SpriteFont>("GameFont");
 
             ball = new Ball(images[1], new Vector2(50, 770), new Vector2(15, 13), Color.White);
             paddle = new Paddle(images[2], new Vector2(200, 900), new Vector2(15, 0), Color.White);
@@ -72,16 +76,16 @@ namespace BrickBreakerM
             int starty = 10;
             int numrows = 6;
             int counter = 0;
-            
+
             Color tempColor = Color.Red;
 
             for (int i = 0; i < 16 * numrows; i++)
-            {                
+            {
                 Bricks TheBrick = new Bricks(images[0], new Vector2(width + spacing, starty), new Vector2(0, 0), tempColor);
                 bricks.Add(TheBrick);
                 width = bricks[i].Position.X + bricks[i].Image.Width;
 
-                if (i % 16 == 0 && i != 0) // || i == 30 || i == 45 || i == 60)
+                if (i % 16 == 15) // || i == 30 || i == 45 || i == 60)
                 {
                     starty += 50;
                     width = 20;
@@ -137,7 +141,9 @@ namespace BrickBreakerM
         protected override void Update(GameTime gameTime)
         {
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
+            {
                 Exit();
+            }
 
             ks = Keyboard.GetState();
             // TODO: Add your update logic here
@@ -163,17 +169,76 @@ namespace BrickBreakerM
                 }
             }
 
-            bool gameOver = false;
+            
 
-            if (bricks.Count == 0)
+            if (ball.Position.Y > 1000 - ball.Image.Height)
             {
                 gameOver = true;
             }
 
-            if (gameOver)
-            {
 
+            if (ks.IsKeyDown(Keys.Space) && gameOver && !lastKs.IsKeyDown(Keys.Space))
+            {
+                gameOver = false;
+                bricks.Clear();
+                ball.Position.X = 50;
+                ball.Position.Y = 770;
+                paddle.Position.X = 200;
+                paddle.Position.Y = 900;
+
+                float width = 20;
+                int spacing = 10;
+                int starty = 10;
+                int numrows = 6;
+                int counter = 0;
+
+                Color tempColor = Color.Red;
+
+                for (int i = 0; i < 16 * numrows; i++)
+                {
+                    Bricks TheBrick = new Bricks(images[0], new Vector2(width + spacing, starty), new Vector2(0, 0), tempColor);
+                    bricks.Add(TheBrick);
+                    width = bricks[i].Position.X + bricks[i].Image.Width;
+
+                    if (i % 16 == 15) // || i == 30 || i == 45 || i == 60)
+                    {
+                        starty += 50;
+                        width = 20;
+                        counter++;
+                        if (counter == 1)
+                        {
+                            tempColor = Color.Orange;
+                        }
+
+                        else if (counter == 2)
+                        {
+                            tempColor = Color.Yellow;
+                        }
+
+                        else if (counter == 3)
+                        {
+                            tempColor = Color.Green;
+                        }
+
+                        else if (counter == 4)
+                        {
+                            tempColor = Color.Blue;
+                        }
+
+                        else if (counter == 5)
+                        {
+                            tempColor = Color.Indigo;
+                        }
+
+                        else if (counter == 6)
+                        {
+                            tempColor = Color.Violet;
+                        }
+                    }
+                }
             }
+
+            lastKs = ks;
 
             base.Update(gameTime);
         }
@@ -188,13 +253,20 @@ namespace BrickBreakerM
 
             spriteBatch.Begin();
 
-            ball.Draw(spriteBatch);
-            for (int i = 0; i < bricks.Count; i++)
+            if (!gameOver)
             {
-                bricks[i].Draw(spriteBatch);
+                ball.Draw(spriteBatch);
+                for (int i = 0; i < bricks.Count; i++)
+                {
+                    bricks[i].Draw(spriteBatch);
+                }
+                paddle.Draw(spriteBatch);
             }
-            paddle.Draw(spriteBatch);
-            
+            else
+            {
+                spriteBatch.DrawString(gameFont, "Hey... you lost. Please press space to play again.", new Vector2(100,100), Color.White);
+            }
+
             spriteBatch.End();
             // TODO: Add your drawing code here
 
